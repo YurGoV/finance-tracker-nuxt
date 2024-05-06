@@ -4,12 +4,12 @@
   >
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-1">
-        <UIcon name="i-heroicons-arrow-up-right" class="text-green-600" />
-        <div>Salary</div>
+        <UIcon :name="icon" :class="iconColor" />
+        <div>{{ transaction.description }}</div>
       </div>
       <div>
-        <UBadge color="white">
-          Category
+        <UBadge v-if="transaction.category" color="white">
+          {{ transaction.category }}
         </UBadge>
       </div>
     </div>
@@ -22,6 +22,7 @@
               color="white"
               variant="ghost"
               trailing-icon="i-heroicons-ellipsis-horizontal"
+              :loading="isLoading"
             />
           </UDropdown>
         </div>
@@ -31,8 +32,50 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import type { ITransaction } from '~/types/transaction'
+const props = defineProps({
+  transaction: { type: Object as () => ITransaction, default: null }
+})
+
 // @ts-ignore
-const currency = useCurrency(3000)
+const supabase = useSupabaseClient()
+
+const isIncome = computed(
+  () => props.transaction.type.toLowerCase() === 'income'
+)
+const icon = computed(() =>
+  isIncome.value ? 'i-heroicons-arrow-up-right' : 'i-heroicons-arrow-down-left'
+)
+const iconColor = computed(() =>
+  isIncome.value ? 'text-green-600' : 'text-red-600'
+)
+
+const deleteTransaction = async () => {
+  isLoading.value = true
+  try {
+    await supabase.from('transactions').delete().eq('id', props.transaction.id)
+    toast.add({
+      title: 'Transaction deleted',
+      icon: 'i-heroicons-check-circle',
+      color: 'green'
+    })
+  } catch (err) {
+    toast.add({
+      title: 'Transaction deleted',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'red'
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+const isLoading = ref(false)
+// @ts-ignore
+const toast = useToast()
+
+// @ts-ignore
+const currency = useCurrency(props.transaction?.amount)
 const items = [
   [
     {
@@ -43,7 +86,7 @@ const items = [
     {
       label: 'Delete',
       icon: 'i-heroicons-trash-20-solid',
-      click: () => console.log('Delete')
+      click: deleteTransaction
     }
   ]
 ]

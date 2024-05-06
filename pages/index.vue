@@ -37,17 +37,72 @@
       :loading="false"
     />
   </section>
+  <!-- <section v-if="transactions?.length"> -->
   <section>
-    <Transaction />
-    <Transaction />
-    <Transaction />
-    <Transaction />
+    <div
+      v-for="(transactionsOnDay, date) in transactionsGroupedByDay"
+      :key="date"
+      class="mb-10"
+    >
+      <DailyTransactionSummary :date="date" :transactions="transactionsOnDay" />
+      <Transaction
+        v-for="transaction in transactionsOnDay"
+        :key="transaction.id"
+        :transaction="transaction"
+      />
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { transactionsViewOptions } from '~/common/constants'
+import type {
+  IAsyncTransactionsResult,
+  ITransaction
+} from '~/types/transaction'
+// import type { Database } from '~/types'
 
 const selectedVeiw = ref(transactionsViewOptions[1])
+
+// @ts-ignore
+const supabase = useSupabaseClient()
+// const supabase = useSupabaseClient<Database>()
+
+// NOTE: error with this:
+//
+// const transactions = ref<ITransaction[]>([])
+
+// @ts-ignore
+const { data: transactions, pending }: IAsyncTransactionsResult = useAsyncData(
+  'transactions',
+  async () => {
+    const { data, error } = await supabase.from('transactions').select()
+
+    if (error) {
+      return []
+    }
+
+    return data
+  }
+)
+
+type GroupedTransactions = { [date: string]: ITransaction[] };
+
+const transactionsGroupedByDay = computed(() => {
+  const grouped: GroupedTransactions = {}
+
+  // @ts-ignore
+  for (const transaction of transactions.value) {
+    const date = new Date(transaction.created_at).toISOString().split('T')[0]
+
+    if (!grouped[date]) {
+      grouped[date] = []
+    }
+    grouped[date].push(transaction)
+  }
+
+  return grouped
+})
+// console.log(transactionsGroupedByDay.value)
 </script>
