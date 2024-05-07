@@ -7,7 +7,7 @@ export interface ITransaction {
 }
 
 export interface IAsyncTransactionsResult {
-  data: ITransaction[];
+  data: {value: ITransaction[] };
   pending: boolean;
   error: any; // Define the error type accordingly
 }

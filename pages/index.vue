@@ -11,34 +11,54 @@
     <Trend
       color="green"
       title="Income"
-      :amount="4000"
+      :amount="incomeTotal"
       :last-amount="3000"
-      :loading="false"
+      :loading="isLoading"
     />
     <Trend
       color="red"
-      title="Expence"
-      :amount="4000"
+      title="Expense"
+      :amount="expenseTotal"
       :last-amount="5000"
-      :loading="false"
+      :loading="isLoading"
     />
     <Trend
       color="green"
       title="Investments"
       :amount="4000"
       :last-amount="3000"
-      :loading="false"
+      :loading="isLoading"
     />
     <Trend
       color="red"
       title="Saving"
       :amount="4000"
       :last-amount="4100"
-      :loading="false"
+      :loading="isLoading"
     />
   </section>
-  <!-- <section v-if="transactions?.length"> -->
-  <section>
+
+  <section class="flex justify-between mb-10">
+    <div>
+      <h2 class="text-2xl font-extrabold">
+        Transactions
+      </h2>
+      <div class="text-gray-500 dark:text-gray-400">
+        You have {{ incomeCount }} incomes and {{ expenseCount }} expenses this
+        period
+      </div>
+    </div>
+    <div>
+      <UButton
+        icon="i-heroicons-plus-circle"
+        color="white"
+        variant="solid"
+        label="Add"
+      />
+    </div>
+  </section>
+
+  <section v-if="!isLoading">
     <div
       v-for="(transactionsOnDay, date) in transactionsGroupedByDay"
       :key="date"
@@ -49,13 +69,17 @@
         v-for="transaction in transactionsOnDay"
         :key="transaction.id"
         :transaction="transaction"
+        @deleted="refreshTransactions()"
       />
     </div>
+  </section>
+  <section v-else>
+    <USkeleton v-for="i in 4" :key="i" class="h-8 w-full mb-2" />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { transactionsViewOptions } from '~/common/constants'
 import type {
   IAsyncTransactionsResult,
@@ -72,20 +96,61 @@ const supabase = useSupabaseClient()
 // NOTE: error with this:
 //
 // const transactions = ref<ITransaction[]>([])
+const transactions = ref<ITransaction[]>([])
+const isLoading = ref(false)
 
-// @ts-ignore
-const { data: transactions, pending }: IAsyncTransactionsResult = useAsyncData(
-  'transactions',
-  async () => {
-    const { data, error } = await supabase.from('transactions').select()
-
-    if (error) {
-      return []
-    }
-
-    return data
+const income = computed(() => {
+  if (transactions.value.length) {
+    const income = transactions.value.filter(
+      t => t.type.toLowerCase() === 'income'
+    )
+    return income
   }
+  return []
+})
+const expense = computed(() => {
+  if (transactions.value.length) {
+    const expense = transactions.value.filter(
+      t => t.type.toLowerCase() === 'expense'
+    )
+    return expense
+  }
+  return []
+})
+const incomeCount = computed(() => income.value.length)
+const expenseCount = computed(() => expense.value.length)
+const incomeTotal = computed(() =>
+  income.value.reduce((sum, transaction) => sum + transaction.amount, 0)
 )
+const expenseTotal = computed(() =>
+  expense.value.reduce((sum, transaction) => sum + transaction.amount, 0)
+)
+
+const fetchTransactions = async () => {
+  isLoading.value = true
+  try {
+    const result: IAsyncTransactionsResult =
+      // @ts-ignore
+      await useAsyncData('transactions', async () => {
+        const { data, error } = await supabase.from('transactions').select()
+
+        if (error) {
+          return []
+        }
+
+        return data
+      })
+
+    return result.data.value
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const refreshTransactions = async () =>
+  (transactions.value = await fetchTransactions())
+
+await refreshTransactions()
 
 type GroupedTransactions = { [date: string]: ITransaction[] };
 

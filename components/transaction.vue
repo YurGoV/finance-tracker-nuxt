@@ -34,9 +34,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ITransaction } from '~/types/transaction'
+
 const props = defineProps({
   transaction: { type: Object as () => ITransaction, default: null }
 })
+
+const emit = defineEmits(['deleted'])
 
 // @ts-ignore
 const supabase = useSupabaseClient()
@@ -60,6 +63,7 @@ const deleteTransaction = async () => {
       icon: 'i-heroicons-check-circle',
       color: 'green'
     })
+    emit('deleted', props.transaction.id)
   } catch (err) {
     toast.add({
       title: 'Transaction deleted',
