@@ -49,11 +49,13 @@
       </div>
     </div>
     <div>
+      <TransactionModal v-model="isOpen" />
       <UButton
         icon="i-heroicons-plus-circle"
         color="white"
         variant="solid"
         label="Add"
+        @click="isOpen = true"
       />
     </div>
   </section>
@@ -98,6 +100,7 @@ const supabase = useSupabaseClient()
 // const transactions = ref<ITransaction[]>([])
 const transactions = ref<ITransaction[]>([])
 const isLoading = ref(false)
+const isOpen = ref(false)
 
 const income = computed(() => {
   if (transactions.value.length) {
