@@ -49,7 +49,7 @@
       </div>
     </div>
     <div>
-      <TransactionModal v-model="isOpen" />
+      <TransactionModal v-model="isOpen" @saved="refreshTransactions()" />
       <UButton
         icon="i-heroicons-plus-circle"
         color="white"
@@ -105,7 +105,8 @@ const isOpen = ref(false)
 const income = computed(() => {
   if (transactions.value.length) {
     const income = transactions.value.filter(
-      t => t.type.toLowerCase() === 'income'
+      // t => t.type.toLowerCase() === 'income'
+      t => t.type === 'Income'
     )
     return income
   }
@@ -114,7 +115,8 @@ const income = computed(() => {
 const expense = computed(() => {
   if (transactions.value.length) {
     const expense = transactions.value.filter(
-      t => t.type.toLowerCase() === 'expense'
+      // t => t.type.toLowerCase() === 'expense'
+      t => t.type === 'Expense'
     )
     return expense
   }
@@ -135,7 +137,10 @@ const fetchTransactions = async () => {
     const result: IAsyncTransactionsResult =
       // @ts-ignore
       await useAsyncData('transactions', async () => {
-        const { data, error } = await supabase.from('transactions').select()
+        const { data, error } = await supabase
+          .from('transactions')
+          .select()
+          .order('created_at', { ascending: false })
 
         if (error) {
           return []

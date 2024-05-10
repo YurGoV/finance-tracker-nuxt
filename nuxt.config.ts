@@ -8,6 +8,9 @@ export default defineNuxtConfig({
     '@': resolve(__dirname, '/')
   },
   modules: ['@nuxt/ui', '@nuxtjs/supabase'],
+  tailwindcss: {
+    quiet: true
+  },
   supabase: {
     redirect: false
   }
