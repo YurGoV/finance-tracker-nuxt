@@ -1,4 +1,4 @@
-export const transactionsViewOptions = ['Yearly', 'Monthly', 'Daily']
+export const transactionsViewOptions = ['yearly', 'monthly', 'daily']
 
 export const categories = ['food', 'health', 'entertainment']
 

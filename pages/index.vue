@@ -12,29 +12,29 @@
       color="green"
       title="Income"
       :amount="incomeTotal"
-      :last-amount="prevIncomeTotal"
-      :loading="pending"
+      :last-amount="3000"
+      :loading="isLoading"
     />
     <Trend
       color="red"
       title="Expense"
       :amount="expenseTotal"
-      :last-amount="prevExpenseTotal"
-      :loading="pending"
+      :last-amount="5000"
+      :loading="isLoading"
     />
     <Trend
       color="green"
       title="Investments"
       :amount="4000"
       :last-amount="3000"
-      :loading="pending"
+      :loading="isLoading"
     />
     <Trend
       color="red"
       title="Saving"
       :amount="4000"
       :last-amount="4100"
-      :loading="pending"
+      :loading="isLoading"
     />
   </section>
 
@@ -49,7 +49,7 @@
       </div>
     </div>
     <div>
-      <TransactionModal v-model="isOpen" @saved="refresh()" />
+      <TransactionModal v-model="isOpen" @saved="refreshTransactions()" />
       <UButton
         icon="i-heroicons-plus-circle"
         color="white"
@@ -60,14 +60,18 @@
     </div>
   </section>
 
-  <section v-if="!pending">
-    <div v-for="(transactionsOnDay, date) in byDate" :key="date" class="mb-10">
+  <section v-if="!isLoading">
+    <div
+      v-for="(transactionsOnDay, date) in transactionsGroupedByDay"
+      :key="date"
+      class="mb-10"
+    >
       <DailyTransactionSummary :date="date" :transactions="transactionsOnDay" />
       <Transaction
         v-for="transaction in transactionsOnDay"
         :key="transaction.id"
         :transaction="transaction"
-        @deleted="refresh()"
+        @deleted="refreshTransactions()"
       />
     </div>
   </section>
@@ -79,34 +83,99 @@
 <script setup lang="ts">
 import { computed, ref, type Ref } from 'vue'
 import { transactionsViewOptions } from '~/common/constants'
+import type {
+  IAsyncTransactionsResult,
+  ITransaction
+} from '~/types/transaction'
+// import type { Database } from '~/types'
 
 const selectedVeiw = ref(transactionsViewOptions[1])
-const isOpen = ref(false)
+
 // @ts-ignore
-const { current, previous } = useSelectedTimePeriod(selectedVeiw)
+const supabase = useSupabaseClient()
+// const supabase = useSupabaseClient<Database>()
 
-const {
-  pending,
-  refresh,
-  transactions: {
-    incomeCount,
-    expenseCount,
-    incomeTotal,
-    expenseTotal,
-    grouped: { byDate }
+// NOTE: error with this:
+//
+// const transactions = ref<ITransaction[]>([])
+const transactions = ref<ITransaction[]>([])
+const isLoading = ref(false)
+const isOpen = ref(false)
+
+const income = computed(() => {
+  if (transactions.value.length) {
+    const income = transactions.value.filter(
+      // t => t.type.toLowerCase() === 'income'
+      t => t.type === 'Income'
+    )
+    return income
   }
-  // @ts-ignore
-} = useFetchTransactions(current)
-await refresh()
-
-const {
-  refresh: refreshPrevious,
-  transactions: {
-    incomeTotal: prevIncomeTotal,
-    expenseTotal: prevExpenseTotal
+  return []
+})
+const expense = computed(() => {
+  if (transactions.value.length) {
+    const expense = transactions.value.filter(
+      // t => t.type.toLowerCase() === 'expense'
+      t => t.type === 'Expense'
+    )
+    return expense
   }
-  // @ts-ignore
-} = useFetchTransactions(previous)
+  return []
+})
+const incomeCount = computed(() => income.value.length)
+const expenseCount = computed(() => expense.value.length)
+const incomeTotal = computed(() =>
+  income.value.reduce((sum, transaction) => sum + transaction.amount, 0)
+)
+const expenseTotal = computed(() =>
+  expense.value.reduce((sum, transaction) => sum + transaction.amount, 0)
+)
 
-await refreshPrevious()
+const fetchTransactions = async () => {
+  isLoading.value = true
+  try {
+    const result: IAsyncTransactionsResult =
+      // @ts-ignore
+      await useAsyncData('transactions', async () => {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select()
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          return []
+        }
+
+        return data
+      })
+
+    return result.data.value
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const refreshTransactions = async () =>
+  (transactions.value = await fetchTransactions())
+
+await refreshTransactions()
+
+type GroupedTransactions = { [date: string]: ITransaction[] };
+
+const transactionsGroupedByDay = computed(() => {
+  const grouped: GroupedTransactions = {}
+
+  // @ts-ignore
+  for (const transaction of transactions.value) {
+    const date = new Date(transaction.created_at).toISOString().split('T')[0]
+
+    if (!grouped[date]) {
+      grouped[date] = []
+    }
+    grouped[date].push(transaction)
+  }
+
+  return grouped
+})
+// console.log(transactionsGroupedByDay.value)
 </script>

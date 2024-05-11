@@ -87,3 +87,4 @@ async function seedTransactions () {
 }
 
 seedTransactions().catch(console.error)
+

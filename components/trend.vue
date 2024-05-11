@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRefs } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   title: {
@@ -51,8 +51,6 @@ const props = defineProps({
   }
 })
 
-const { amount } = toRefs(props)
-
 const trendingUp = computed(() => props.amount >= props.lastAmount)
 const icon = computed(() =>
   trendingUp.value
@@ -73,7 +71,7 @@ const percentageTrend = computed(() => {
 })
 
 // @ts-ignore
-const currency = useCurrency(amount)
+const currency = useCurrency(props.amount)
 </script>
 
 <style scoped>
