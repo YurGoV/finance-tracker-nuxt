@@ -64,7 +64,7 @@ export const useFetchTransactions = (period) => {
 
   if (period) {
     // @ts-ignore
-    watch(period, async () => await refresh(), { immediate: true })
+    watch(period, async () => await refresh())
   }
 
   const transactionsGroupedByDate = computed(() => {

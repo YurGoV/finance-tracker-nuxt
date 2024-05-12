@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type Ref } from 'vue'
+import { computed, onBeforeMount, ref, type Ref } from 'vue'
 import { transactionsViewOptions } from '~/common/constants'
 // import type {
 //   IAsyncTransactionsResult,
@@ -89,6 +89,9 @@ const isOpen = ref(false)
 
 // @ts-ignore
 const { current, previous } = useSelectedTimePeriod(selectedView)
+const previousInitialized = computed(
+  () => previous.value && previous.value.from && previous.value.to
+)
 
 const {
   pending,
@@ -102,13 +105,37 @@ const {
   }
   // @ts-ignore
 } = useFetchTransactions(current)
+// await refresh()
+// @ts-ignore
+watch(previousInitialized, (initialized) => {
+  if (initialized) {
+    // @ts-ignore
+    watch(
+      () => ({ from: previous.value.from, to: previous.value.to }), // <-- watch source
+      async (previousValue, currentValue) => {
+        if (
+          previousValue.from.toISOString() ===
+            currentValue.from.toISOString() &&
+          previousValue.to.toISOString() === currentValue.to.toISOString()
+        ) {
+          return
+        }
+
+        await refresh()
+      }
+    )
+  }
+})
+
+// TODO: fix: no page first load/refresh - no data
 
 const {
+  refresh: refreshPrevious,
   transactions: {
     incomeTotal: prevIncomeTotal,
     expenseTotal: prevExpenseTotal
   }
   // @ts-ignore
 } = useFetchTransactions(previous)
-
+await refreshPrevious()
 </script>

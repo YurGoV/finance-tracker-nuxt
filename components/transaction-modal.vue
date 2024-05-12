@@ -130,6 +130,7 @@ const save = async () => {
       })
       isOpen.value = false
       emit('saved')
+      return
     }
 
     throw error
