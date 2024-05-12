@@ -10,7 +10,12 @@ export const useCurrency = (amount: number | Ref<number>) => {
 
     const value = isRef(amount) ? amount.value : amount
 
-    return new Intl.NumberFormat('en-IN', currencyOptions).format(value)
+    const formattedCurrency = new Intl.NumberFormat(
+      'en-IN',
+      currencyOptions
+    ).format(value)
+
+    return formattedCurrency
   })
 
   return currency
