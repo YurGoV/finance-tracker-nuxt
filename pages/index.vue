@@ -4,7 +4,7 @@
       Summary
     </h1>
     <div>
-      <USelectMenu v-model="selectedVeiw" :options="transactionsViewOptions" />
+      <USelectMenu v-model="selectedView" :options="transactionsViewOptions" />
     </div>
   </section>
   <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -12,14 +12,14 @@
       color="green"
       title="Income"
       :amount="incomeTotal"
-      :last-amount="3000"
+      :last-amount="prevIncomeTotal"
       :loading="pending"
     />
     <Trend
       color="red"
       title="Expense"
       :amount="expenseTotal"
-      :last-amount="5000"
+      :last-amount="prevExpenseTotal"
       :loading="pending"
     />
     <Trend
@@ -84,8 +84,11 @@ import { transactionsViewOptions } from '~/common/constants'
 //   ITransaction
 // } from '~/types/transaction'
 
-const selectedVeiw = ref(transactionsViewOptions[1])
+const selectedView = ref(transactionsViewOptions[1])
 const isOpen = ref(false)
+
+// @ts-ignore
+const { current, previous } = useSelectedTimePeriod(selectedView)
 
 const {
   pending,
@@ -98,7 +101,14 @@ const {
     grouped: { byDate }
   }
   // @ts-ignore
-} = useFetchTransactions()
+} = useFetchTransactions(current)
 
-await refresh()
+const {
+  transactions: {
+    incomeTotal: prevIncomeTotal,
+    expenseTotal: prevExpenseTotal
+  }
+  // @ts-ignore
+} = useFetchTransactions(previous)
+
 </script>

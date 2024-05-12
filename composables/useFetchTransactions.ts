@@ -1,9 +1,10 @@
 import { computed, ref } from 'vue'
+import type { ITransaction } from '~/types/transaction'
 
-export const useFetchTransactions = () => {
+export const useFetchTransactions = (period) => {
   // @ts-ignore
   const supabase = useSupabaseClient()
-  const transactions = ref([])
+  const transactions = ref(<ITransaction[]>[])
   const pending = ref(false)
 
   const income = computed(() =>
@@ -17,26 +18,41 @@ export const useFetchTransactions = () => {
   const expenseCount = computed(() => expense.value.length)
 
   const incomeTotal = computed(() =>
-    income.value.reduce((sum, transaction) => sum + transaction.amount, 0)
+    income.value.reduce(
+      (sum, transaction) => sum + Number(transaction.amount),
+      0
+    )
   )
   const expenseTotal = computed(() =>
-    expense.value.reduce((sum, transaction) => sum + transaction.amount, 0)
+    expense.value.reduce(
+      (sum, transaction) => sum + Number(transaction.amount),
+      0
+    )
   )
 
   const fetchTransactions = async () => {
     pending.value = true
     try {
+      if (!period.value) {
+        return []
+      }
       // @ts-ignore
-      const { data } = await useAsyncData('transactions', async () => {
-        const { data, error } = await supabase
-          .from('transactions')
-          .select()
-          .order('created_at', { ascending: false })
+      const { data } = await useAsyncData(
+        `transactions-${period.value.from.toDateString()}-${period.value.to.toDateString()}`,
+        async () => {
+          const { data, error } = await supabase
+            .from('transactions')
+            .select()
+            .gte('created_at', period.value.from.toISOString())
+            .lte('created_at', period.value.to.toISOString())
+            .order('created_at', { ascending: false })
 
-        if (error) { return [] }
-
-        return data
-      })
+          if (error) {
+            return []
+          }
+          return data
+        }
+      )
 
       return data.value
     } finally {
@@ -46,11 +62,18 @@ export const useFetchTransactions = () => {
 
   const refresh = async () => (transactions.value = await fetchTransactions())
 
+  if (period) {
+    // @ts-ignore
+    watch(period, async () => await refresh(), { immediate: true })
+  }
+
   const transactionsGroupedByDate = computed(() => {
     const grouped = {}
 
     for (const transaction of transactions.value) {
-      const date = new Date(transaction.created_at).toISOString().split('T')[0]
+      const date: string = new Date(transaction.created_at)
+        .toISOString()
+        .split('T')[0]
 
       if (!grouped[date]) {
         grouped[date] = []

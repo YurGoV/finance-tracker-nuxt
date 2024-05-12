@@ -1,9 +1,10 @@
 export interface ITransaction {
-  id: string;
-  amount: number;
-  type: string;
-  description: string | null;
-  category: string | null;
+  id: String;
+  amount: Number;
+  type: String;
+  description: String | null;
+  category: String | null;
+  created_at: Date;
 }
 
 export interface IAsyncTransactionsResult {

@@ -1,5 +1,3 @@
-export const transactionsViewOptions = ['yearly', 'monthly', 'daily']
-
-export const categories = ['food', 'health', 'entertainment']
-
+export const transactionsViewOptions = ['Yearly', 'Monthly', 'Daily']
+export const categories = ['Food', 'Housing', 'Car', 'Entertainment']
 export const types = ['Income', 'Expense', 'Saving', 'Investment']
