@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     quiet: true
   },
   supabase: {
-    redirect: false
+    // redirect: false
+    redirect: true
   }
 })
