@@ -50,6 +50,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+// @ts-ignore
+const { toastError } = useAppToast()
 
 const success = ref(false)
 const email = ref('')
@@ -74,11 +76,9 @@ const handleLogin = async () => {
     })
 
     if (error) {
-      toast.add({
+      toastError({
         title: 'Error Authenticating',
-        icon: 'i-heroicons-exclamation-circle',
-        description: error.message,
-        color: 'red'
+        description: error.message
       })
     } else {
       success.value = true

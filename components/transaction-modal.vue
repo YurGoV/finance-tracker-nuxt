@@ -74,8 +74,7 @@
 import { defineProps, defineEmits } from 'vue'
 import { z } from 'zod'
 import { categories, types } from '~/common/constants'
-
-const toast = useToast()
+const { toastSuccess, toastError } = useAppToast()
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false }
@@ -123,10 +122,8 @@ const save = async () => {
       .from('transactions')
       .upsert({ ...state.value })
     if (!error) {
-      toast.add({
-        title: 'Transaction saved',
-        icon: 'i-heroicons-check-circle',
-        color: 'green'
+      toastSuccess({
+        title: 'Transaction saved'
       })
       isOpen.value = false
       emit('saved')
@@ -135,10 +132,8 @@ const save = async () => {
 
     throw error
   } catch (err) {
-    toast.add({
-      title: 'Transaction not saved',
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red'
+    toastError({
+      title: 'Transaction not saved'
     })
   } finally {
     isLoading.value = false
