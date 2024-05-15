@@ -2,7 +2,7 @@
   <UModal v-model="isOpen">
     <UCard>
       <template #header>
-        Add Transaction
+        {{ isEditing ? "Edit" : "Add" }} Transaction
       </template>
 
       <UForm ref="form" :state="state" :schema="schema" @submit="save">
@@ -13,9 +13,10 @@
           class="mb-4"
         >
           <USelect
-            v-model="state.type"
+            :disabled="isEditing"
             placeholder="Select the transaction type"
             :options="types"
+            v-model="state.type"
           />
         </UFormGroup>
         <UFormGroup label="Amount" :required="true" name="amount" class="mb-4">
@@ -71,95 +72,108 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
-import { z } from 'zod'
-import { categories, types } from '~/common/constants'
-const { toastSuccess, toastError } = useAppToast()
+import { defineProps, defineEmits } from "vue";
+import { z } from "zod";
+import { categories, types } from "~/common/constants";
+const { toastSuccess, toastError } = useAppToast();
 
 const props = defineProps({
-  modelValue: { type: Boolean, default: false }
-})
+  modelValue: { type: Boolean, default: false },
+  transaction: {type: Object, required: false}
+});
 
-const emit = defineEmits(['update:modelValue', 'saved'])
+const isEditing = computed(() => !!props.transaction)
+const emit = defineEmits(["update:modelValue", "saved"]);
 
 const defaultSchema = z.object({
   created_at: z.string(),
   description: z.string().optional(),
-  amount: z.number().positive('Amount needs to be more than 0')
-})
+  amount: z.number().positive("Amount needs to be more than 0"),
+});
 const incomeSchema = z.object({
-  type: z.literal('Income')
-})
+  type: z.literal("Income"),
+});
 const expenseSchema = z.object({
-  type: z.literal('Expense'),
-  category: z.enum(categories)
-})
+  type: z.literal("Expense"),
+  category: z.enum(categories),
+});
 const investmentSchema = z.object({
-  type: z.literal('Investment')
-})
+  type: z.literal("Investment"),
+});
 const savingSchema = z.object({
-  type: z.literal('Saving')
-})
+  type: z.literal("Saving"),
+});
 const schema = z.intersection(
-  z.discriminatedUnion('type', [
+  z.discriminatedUnion("type", [
     incomeSchema,
     expenseSchema,
     investmentSchema,
-    savingSchema
+    savingSchema,
   ]),
-  defaultSchema
-)
-const form = ref()
-const isLoading = ref(false)
-const supabase = useSupabaseClient()
+  defaultSchema,
+);
+const form = ref();
+const isLoading = ref(false);
+const supabase = useSupabaseClient();
 const save = async () => {
   // eslint-disable-next-line
   if (form.value.errors.length) return;
 
-  isLoading.value = true
+  isLoading.value = true;
   try {
     const { error } = await supabase
-      .from('transactions')
-      .upsert({ ...state.value })
+      .from("transactions")
+      .upsert({
+        ...state.value,
+        id: props.transaction?.id
+      })
     if (!error) {
       toastSuccess({
-        title: 'Transaction saved'
-      })
-      isOpen.value = false
-      emit('saved')
-      return
+        title: "Transaction saved",
+      });
+      isOpen.value = false;
+      emit("saved");
+      return;
     }
 
-    throw error
+    throw error;
   } catch (err) {
     toastError({
-      title: 'Transaction not saved'
-    })
+      title: "Transaction not saved",
+    });
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const initialState = {
   type: undefined,
   amount: undefined,
   created_at: undefined,
   description: undefined,
-  category: undefined
-}
-const state = ref({ ...initialState })
+  category: undefined,
+};
+
+const state = ref(isEditing.value ? {
+  type: props.transaction.type,
+  amount: props.transaction.amount,
+  created_at: props.transaction.created_at.split('T')[0],
+  description: props.transaction.description,
+  category: props.transaction.category
+} : { ...initialState })
+
 const resetForm = () => {
-  Object.assign(state.value, initialState)
-  form.value.clear()
-}
+  Object.assign(state.value, initialState);
+  form.value.clear();
+};
 
 const isOpen = computed({
   get: () => props.modelValue,
   set: (value) => {
     if (!value) {
-      resetForm()
+      resetForm();
     }
-    emit('update:modelValue', value)
-  }
-})
+    emit("update:modelValue", value);
+  },
+});
 </script>

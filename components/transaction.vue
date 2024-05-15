@@ -24,6 +24,7 @@
               trailing-icon="i-heroicons-ellipsis-horizontal"
               :loading="isLoading"
             />
+            <TransactionModal v-model="isOpen" :transaction="transaction" @saved="emit('edited')" />
           </UDropdown>
         </div>
       </div>
@@ -41,10 +42,12 @@ const props = defineProps({
   transaction: { type: Object as () => ITransaction, default: null }
 })
 
-const emit = defineEmits(['deleted'])
+const emit = defineEmits(['deleted', 'edited'])
 
 // @ts-ignore
 const supabase = useSupabaseClient()
+
+const isOpen = ref(false)
 
 const isIncome = computed(
   // () => props.transaction.type.toLowerCase() === 'income'
@@ -84,7 +87,7 @@ const items = [
     {
       label: 'Edit',
       icon: 'i-heroicons-pencil-square-20-solid',
-      click: () => console.log('Edit')
+      click: () => isOpen.value = true
     },
     {
       label: 'Delete',
