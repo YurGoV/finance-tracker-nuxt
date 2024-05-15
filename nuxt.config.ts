@@ -7,6 +7,7 @@ export default defineNuxtConfig({
   alias: {
     '@': resolve(__dirname, '/')
   },
+  // modules: ['@nuxt/ui', '@nuxtjs/supabase', '@nuxt/eslint'],
   modules: ['@nuxt/ui', '@nuxtjs/supabase'],
   tailwindcss: {
     quiet: true

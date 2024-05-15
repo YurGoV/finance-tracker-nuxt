@@ -34,6 +34,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ITransaction } from '~/types/transaction'
+// @ts-ignore
+const { toastSuccess, toastError } = useAppToast()
 
 const props = defineProps({
   transaction: { type: Object as () => ITransaction, default: null }
@@ -59,17 +61,13 @@ const deleteTransaction = async () => {
   isLoading.value = true
   try {
     await supabase.from('transactions').delete().eq('id', props.transaction.id)
-    toast.add({
-      title: 'Transaction deleted',
-      icon: 'i-heroicons-check-circle',
-      color: 'green'
+    toastSuccess({
+      title: 'Transaction deleted'
     })
     emit('deleted', props.transaction.id)
   } catch (err) {
-    toast.add({
-      title: 'Transaction deleted',
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'red'
+    toastError({
+      title: 'Transaction deleted'
     })
   } finally {
     isLoading.value = false

@@ -1,8 +1,6 @@
 <template>
   <section class="flex item-center justify-between mb-10">
-    <h1 class="text-4xl font-extrabold">
-      Summary
-    </h1>
+    <h1 class="text-4xl font-extrabold">Summary</h1>
     <div>
       <USelectMenu v-model="selectedView" :options="transactionsViewOptions" />
     </div>
@@ -40,9 +38,7 @@
 
   <section class="flex justify-between mb-10">
     <div>
-      <h2 class="text-2xl font-extrabold">
-        Transactions
-      </h2>
+      <h2 class="text-2xl font-extrabold">Transactions</h2>
       <div class="text-gray-500 dark:text-gray-400">
         You have {{ incomeCount }} incomes and {{ expenseCount }} expenses this
         period
@@ -77,21 +73,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, ref, type Ref } from 'vue'
-import { transactionsViewOptions } from '~/common/constants'
-// import type {
-//   IAsyncTransactionsResult,
-//   ITransaction
-// } from '~/types/transaction'
+import { computed, onBeforeMount, ref, type Ref } from "vue";
+import { transactionsViewOptions } from "~/common/constants";
 
-const selectedView = ref(transactionsViewOptions[1])
-const isOpen = ref(false)
+// @ts-expect-error
+const user = useSupabaseUser();
+const selectedView = ref(
+  user.value.user_metadata?.transaction_view ?? transactionsViewOptions[1],
+);
 
-// @ts-ignore
-const { current, previous } = useSelectedTimePeriod(selectedView)
+const isOpen = ref(false);
+
+// @ts-expect-error
+const { current, previous } = useSelectedTimePeriod(selectedView);
 const previousInitialized = computed(
-  () => previous.value && previous.value.from && previous.value.to
-)
+  () => previous.value && previous.value.from && previous.value.to,
+);
 
 const {
   pending,
@@ -101,15 +98,15 @@ const {
     expenseCount,
     incomeTotal,
     expenseTotal,
-    grouped: { byDate }
-  }
-  // @ts-ignore
-} = useFetchTransactions(current)
+    grouped: { byDate },
+  },
+  // @ts-expect-error
+} = useFetchTransactions(current);
 // await refresh()
-// @ts-ignore
+// @ts-expect-error
 watch(previousInitialized, (initialized) => {
   if (initialized) {
-    // @ts-ignore
+    // @ts-expect-error
     watch(
       () => ({ from: previous.value.from, to: previous.value.to }), // <-- watch source
       async (previousValue, currentValue) => {
@@ -118,14 +115,14 @@ watch(previousInitialized, (initialized) => {
             currentValue.from.toISOString() &&
           previousValue.to.toISOString() === currentValue.to.toISOString()
         ) {
-          return
+          return;
         }
 
-        await refresh()
-      }
-    )
+        await refresh();
+      },
+    );
   }
-})
+});
 
 // TODO: fix: no page first load/refresh - no data
 
@@ -133,9 +130,9 @@ const {
   refresh: refreshPrevious,
   transactions: {
     incomeTotal: prevIncomeTotal,
-    expenseTotal: prevExpenseTotal
-  }
-  // @ts-ignore
-} = useFetchTransactions(previous)
-await refreshPrevious()
+    expenseTotal: prevExpenseTotal,
+  },
+  // @ts-expect-error
+} = useFetchTransactions(previous);
+await refreshPrevious();
 </script>
