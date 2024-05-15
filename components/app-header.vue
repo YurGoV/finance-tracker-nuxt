@@ -10,7 +10,7 @@
         :ui="{ item: { disabled: 'cursor-text select-text' }, width: 'w-64' }"
       >
         <UAvatar
-          src="https://avatars.githubusercontent.com/u/739984?v=4"
+          :src="url"
           alt="Avatar"
         />
 
@@ -41,6 +41,9 @@
 const supabase = useSupabaseClient()
 // @ts-ignore
 const user = useSupabaseUser()
+// @ts-ignore
+const { url } = useAvatarUrl()
+
 const items = [
   [
     {
